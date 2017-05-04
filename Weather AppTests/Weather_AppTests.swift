@@ -11,26 +11,39 @@ import XCTest
 
 class Weather_AppTests: XCTestCase {
     
+    var sessionUnderTest: URLSession!
+    
     override func setUp() {
         super.setUp()
-        // Put setup code here. This method is called before the invocation of each test method in the class.
+        sessionUnderTest = URLSession(configuration: URLSessionConfiguration.default)
     }
     
     override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
+        sessionUnderTest = nil
         super.tearDown()
     }
     
-    func testExample() {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-    }
-    
-    func testPerformanceExample() {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+    // Asynchronous test: faster fail
+    func testCallToiTunesCompletes() {
+        
+        let url = URL(string: "http://api.openweathermap.org/data/2.5/forecast/daily?id=2643743&appid=9ab980154b2797d68656609717cbb4e6")
+        
+        let promise = expectation(description: "Completion handler invoked")
+        var statusCode: Int?
+        var responseError: Error?
+
+        let dataTask = sessionUnderTest.dataTask(with: url!) { data, response, error in
+            statusCode = (response as? HTTPURLResponse)?.statusCode
+            responseError = error
+            
+            promise.fulfill()
         }
+        dataTask.resume()
+        
+        waitForExpectations(timeout: 5, handler: nil)
+        
+        XCTAssertNil(responseError)
+        XCTAssertEqual(statusCode!, 200)
     }
     
 }
